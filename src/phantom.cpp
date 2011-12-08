@@ -277,6 +277,24 @@ Phantom::onInitialized()
 
     // Bootstrap the PhantomJS scope
     m_page->mainFrame()->evaluateJavaScript(Utils::readResourceFileUtf8(":/bootstrap.js"));
+
+    // Listen for stdin closing
+    QSocketNotifier *pNot = new QSocketNotifier(STDIN_FILENO, QSocketNotifier::Read, this);
+    connect(pNot, SIGNAL(activated(int)), this, SLOT(onStdinException()));
+    pNot->setEnabled(true);
+}
+
+
+void
+Phantom::onStdinException()
+{
+    char buf[8];
+
+    int n = read(0, buf, 8);
+    if (n == 0) {
+        printf("Terminated\n");
+        Phantom::exit(1);
+    }
 }
 
 

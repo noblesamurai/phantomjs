@@ -86,6 +86,7 @@ private slots:
     void printConsoleMessage(const QString &msg, int lineNumber, const QString &source);
 
     void onInitialized();
+    void onStdinException();
 private:
     void doExit(int code);
 
