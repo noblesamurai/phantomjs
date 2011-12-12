@@ -78,6 +78,8 @@ public slots:
     QString loadModuleSource(const QString &name);
     bool injectJs(const QString &jsFilePath);
 
+    void onStdin();
+
     // exit() will not exit in debug mode. debugExit() will always exit.
     void exit(int code = 0);
     void debugExit(int code = 0);
@@ -86,8 +88,9 @@ private slots:
     void printConsoleMessage(const QString &msg, int lineNumber, const QString &source);
 
     void onInitialized();
-    void onStdinException();
 private:
+    QSocketNotifier *pStdinNotifier;
+
     void doExit(int code);
 
     Encoding m_scriptFileEnc;

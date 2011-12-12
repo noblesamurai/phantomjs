@@ -260,12 +260,31 @@ void Phantom::doExit(int code)
         Utils::cleanupFromDebug();
     }
 
+    pStdinNotifier->setEnabled(false);
+
     m_terminated = true;
     m_returnValue = code;
     qDeleteAll(m_pages);
     m_pages.clear();
     m_page = 0;
     QApplication::instance()->exit(code);
+}
+
+
+void
+messageOutput(QtMsgType type, const char *msg)
+{
+    switch(type) {
+        case QtDebugMsg:
+        case QtWarningMsg:
+            break;
+        case QtCriticalMsg:
+            fprintf(stderr, "Critical: %s\n", msg);
+            break;
+        case QtFatalMsg:
+            fprintf(stderr, "Fatal: %s\n", msg);
+            abort();
+    }
 }
 
 
@@ -279,14 +298,17 @@ Phantom::onInitialized()
     m_page->mainFrame()->evaluateJavaScript(Utils::readResourceFileUtf8(":/bootstrap.js"));
 
     // Listen for stdin closing
-    QSocketNotifier *pNot = new QSocketNotifier(STDIN_FILENO, QSocketNotifier::Read, this);
-    connect(pNot, SIGNAL(activated(int)), this, SLOT(onStdinException()));
-    pNot->setEnabled(true);
+    pStdinNotifier = new QSocketNotifier(STDIN_FILENO, QSocketNotifier::Read, this);
+    connect(pStdinNotifier, SIGNAL(activated(int)), this, SLOT(onStdin()));
+    pStdinNotifier->setEnabled(true);
+
+    // Avoid printing qWarnings (the above notifier generates one at program exit)
+    qInstallMsgHandler(messageOutput);
 }
 
 
 void
-Phantom::onStdinException()
+Phantom::onStdin()
 {
     char buf[8];
 
